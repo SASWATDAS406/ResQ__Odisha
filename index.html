@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResQ Odisha — AI Multi-Hazard Command &amp; Citizen Safety</title>
+  
+  <!-- Google Fonts: DM Sans & Manrope -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  
+  <!-- Leaflet 1.9.4 CSS with local fallback -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
+  
+  <!-- Lucide Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.577.0/dist/umd/lucide.min.js"></script>
+  
+  <!-- Preferred Template Stylesheet -->
+  <link rel="stylesheet" href="/static/styles.css">
+ </head>
+ <body>
+
+  <!-- 1. TOP NAVIGATION BAR -->
+  <header class="topbar">
+   <div class="top-inner">
+    <a class="brand" href="#dashboard" aria-label="ResQ Odisha Dashboard">
+     <span class="brand-mark"><i data-lucide="shield-alert"></i></span>
+     ResQ Odisha
+    </a>
+    
+    <nav class="nav" aria-label="Primary navigation">
+     <a class="active" href="#dashboard">Dashboard</a>
+     <a href="#live-map">Live Map</a>
+     <a href="#alerts">Alerts</a>
+     <a href="#resources">Shelters</a>
+     <a href="#reports">Response Teams</a>
+    </nav>
+    
+    <div class="top-actions">
+     <button id="toggle-weather-mode" class="mode-pill simulation" type="button" title="Click to toggle Weather Simulation vs Live Weather Sync">
+      <span class="mode-dot"></span>
+      <span id="mode-text">SIMULATION</span>
+     </button>
+     
+     <button id="btn-sync-weather" class="sync-pill" type="button" title="Sync live weather telemetry immediately from Open-Meteo">
+      <i data-lucide="refresh-cw" id="sync-icon"></i>
+      <span id="sync-status-text">Sync Live</span>
+     </button>
+     
+     <button id="open-report" class="report-btn" type="button" aria-haspopup="dialog">
+      <i data-lucide="plus"></i>
+      <span class="button-text">Report Incident (SOS)</span>
+      <span class="visually-hidden">Open incident report form</span>
+     </button>
+    </div>
+   </div>
+  </header>
+
+  <!-- 2. MAIN DASHBOARD CONTENT -->
+  <main id="dashboard" class="wrap">
+
+   <!-- Live Natural Disasters Near Odisha News Bulletin & Warning Feed -->
+   <section class="disaster-news-banner" id="disaster-news-section" aria-label="Live Natural Disaster Updates Near Odisha">
+    <div class="news-banner-header">
+     <div class="news-banner-title-group">
+      <span class="live-pulse-badge">
+       <span class="pulse-dot"></span>
+       <span class="pulse-text" id="news-live-tag">LIVE DISASTER ADVISORY &amp; NEWS</span>
+      </span>
+      <span class="news-source-badge" id="news-source-tag"><i data-lucide="shield-alert"></i> OSDMA &bull; IMD &bull; CWC Bulletin</span>
+      <span style="display:none;" id="meta-scenario-status">Live Natural Disaster Intelligence Active</span>
+      <span style="display:none;" id="meta-engine-status">OSDMA Universal AI Command Online</span>
+     </div>
+     <div class="news-banner-actions">
+      <div class="news-category-filters" id="news-category-filters">
+       <button type="button" class="news-filter-btn active" data-category="ALL">All</button>
+       <button type="button" class="news-filter-btn" data-category="CYCLONE">Cyclone</button>
+       <button type="button" class="news-filter-btn" data-category="FLOOD">Flood</button>
+       <button type="button" class="news-filter-btn" data-category="LIGHTNING">Lightning</button>
+       <button type="button" class="news-filter-btn" data-category="COASTAL">Coastal</button>
+      </div>
+      <div class="news-nav-controls">
+       <button type="button" class="news-nav-btn" id="news-prev-btn" title="Previous news item" aria-label="Previous alert">
+        <i data-lucide="chevron-left"></i>
+       </button>
+       <span class="news-counter" id="news-counter">1 / 5</span>
+       <button type="button" class="news-nav-btn" id="news-next-btn" title="Next news item" aria-label="Next alert">
+        <i data-lucide="chevron-right"></i>
+       </button>
+      </div>
+     </div>
+    </div>
+
+    <!-- Active News Display Card -->
+    <div class="news-banner-body" id="news-display-card">
+     <div class="news-item-main">
+      <div class="news-meta-row">
+       <span class="news-severity-tag severity-warning" id="news-item-severity">IMD CYCLONE BULLETIN</span>
+       <span class="news-location-tag" id="news-item-location"><i data-lucide="map-pin"></i> Bay of Bengal / Coastal Odisha</span>
+       <span class="news-time-tag" id="news-item-time"><i data-lucide="clock"></i> Updated just now</span>
+      </div>
+      <h2 class="news-headline" id="news-item-headline">
+       Well-Marked Low Pressure over West-Central Bay of Bengal; Coastal Odisha on Watch
+      </h2>
+      <p class="news-summary" id="news-item-summary">
+       Deep depression track moving north-northwestwards off South Odisha - North Andhra coast. Wind speeds gusting up to 65-75 kmph expected over coastal waters. Fishermen are strictly advised not to venture into deep sea.
+      </p>
+      <div class="news-action-box" id="news-action-box">
+       <span class="news-action-label"><i data-lucide="info"></i> <strong>Safety Advisory:</strong></span>
+       <span class="news-action-text" id="news-item-action">Check cyclone shelter availability, keep emergency supply kit ready, and monitor local disaster siren broadcasts.</span>
+      </div>
+     </div>
+     <div class="news-item-aside">
+      <button type="button" class="btn-ask-copilot" id="btn-news-ask-copilot" title="Ask AI copilot regarding this hazard">
+       <i data-lucide="bot"></i>
+       <span>Ask ResQ AI About This Threat</span>
+      </button>
+      <div class="news-source-credit" id="news-item-source">Source: IMD Regional Centre Bhubaneswar</div>
+     </div>
+    </div>
+   </section>
+
+   <!-- Operations Overview / 4 KPIs -->
+   <section aria-labelledby="overview-title">
+    <div class="section-heading">
+     <div>
+      <h2 id="overview-title">Operations overview</h2>
+      <p>Real-time telemetry and hazard operational metrics across coastal Odisha</p>
+     </div>
+     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="sync-time-badge" id="sync-time-badge" title="Automated telemetry refresh status">
+       <i data-lucide="clock"></i>
+       <span id="last-sync-label">Auto-sync: every 10m · Updated just now</span>
+      </span>
+      <span class="section-note" id="kpi-live-badge">LIVE BACKEND SYNC</span>
+     </div>
+    </div>
+    
+    <div class="kpis">
+     <!-- KPI 1 -->
+     <article class="kpi card">
+      <div class="kpi-top">
+       Active Red Alerts <span class="kpi-icon red"><i data-lucide="triangle-alert"></i></span>
+      </div>
+      <div class="kpi-number" id="kpi-red-alerts">
+       2
+      </div>
+      <div class="kpi-foot" id="kpi-red-foot">
+       <b>Critical</b> coastal warning zones
+      </div>
+     </article>
+
+     <!-- KPI 2 -->
+     <article class="kpi card">
+      <div class="kpi-top">
+       Verified SOS Calls <span class="kpi-icon orange"><i data-lucide="users"></i></span>
+      </div>
+      <div class="kpi-number" id="kpi-sos-calls">
+       15
+      </div>
+      <div class="kpi-foot" id="kpi-sos-foot">
+       Dispatched to ODRAF &amp; NDRF units
+      </div>
+     </article>
+
+     <!-- KPI 3 -->
+     <article class="kpi card">
+      <div class="kpi-top">
+       Shelters Available <span class="kpi-icon green"><i data-lucide="house-plus"></i></span>
+      </div>
+      <div class="kpi-number" id="kpi-shelter-spots">
+       3,527
+      </div>
+      <div class="kpi-foot" id="kpi-shelter-foot">
+       Across 6 multipurpose cyclone centers
+      </div>
+     </article>
+
+     <!-- KPI 4 -->
+     <article class="kpi card">
+      <div class="kpi-top">
+       Active Response Teams <span class="kpi-icon blue"><i data-lucide="shield-check"></i></span>
+      </div>
+      <div class="kpi-number" id="kpi-teams-count">
+       24
+      </div>
+      <div class="kpi-foot" id="kpi-teams-foot">
+       18 deployed · 6 on standby
+      </div>
+     </article>
+    </div>
+   </section>
+
+   <!-- Operations: Map & AI Insights -->
+   <section class="operations" aria-label="Map and AI analysis">
+    
+    <!-- Incident Map -->
+    <article id="live-map" class="panel" aria-labelledby="map-title">
+     <div class="panel-head">
+      <div>
+       <div class="panel-title" id="map-title">
+        <i data-lucide="map-pinned"></i> Odisha Disaster Monitoring Map
+       </div>
+       <div class="panel-sub">
+        Inspect incident reports, hazard zones, and shelters · Odisha Basin
+       </div>
+      </div>
+      <span class="mode-pill simulation" id="map-mode-pill">SIMULATION</span>
+     </div>
+     
+     <div class="filter-row" role="group" aria-label="Filter incidents by severity">
+      <button class="filter-btn selected" type="button" data-filter="all" aria-pressed="true">All markers</button>
+      <button class="filter-btn" type="button" data-filter="critical" aria-pressed="false">Critical (SOS)</button>
+      <button class="filter-btn" type="button" data-filter="high" aria-pressed="false">High risk</button>
+      <button class="filter-btn" type="button" data-filter="moderate" aria-pressed="false">Moderate</button>
+      <button class="filter-btn" type="button" data-filter="shelter" aria-pressed="false">Shelters</button>
+     </div>
+     
+     <div class="map-shell">
+      <div id="map" class="map" role="application" aria-label="Interactive incident map of Odisha"></div>
+     </div>
+     
+     <div class="legend">
+      <strong>SEVERITY</strong>
+      <span class="legend-item"><span class="legend-dot" style="background:#c94242"></span>Critical (Urgency 5)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#ef782d"></span>High (Urgency 4)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#bf7713"></span>Moderate</span>
+      <span class="legend-item"><span class="legend-dot square" style="background:#14b8a6"></span>OSDMA Cyclone Shelter</span>
+      <span>· Markers show live incidents &amp; hazard warnings</span>
+     </div>
+     
+     <div id="incident-detail" class="incident-detail" aria-live="polite">
+      <div>
+       <h3 id="detail-title">Puri Coastal Sector Landfall Zone</h3>
+       <p id="detail-desc">Puri Beach &amp; Swargadwar · High storm breaker alert and inundation watch</p>
+      </div>
+      <span id="detail-badge" class="badge critical">Critical</span>
+     </div>
+    </article>
+
+    <!-- AI Insights Panel -->
+    <aside class="panel insights" aria-labelledby="insights-title">
+     <div class="panel-head">
+      <div>
+       <div class="panel-title" id="insights-title">
+        <i data-lucide="sparkles"></i> AI Insights &amp; Advisory
+       </div>
+       <div class="panel-sub">
+        OSDMA Multi-Hazard Decision Support System
+       </div>
+      </div>
+      <span class="ai-label"><i data-lucide="cpu" style="width:12px;height:12px"></i> LIVE AI</span>
+     </div>
+     
+     <div class="insight-body">
+      <p class="insight-intro" id="ai-intro-text">
+       Bay of Bengal cyclonic depression tracking towards Paradip-Dhamra coast with sustained winds of 95–110 km/h and intense precipitation.
+      </p>
+      
+      <div class="insight-block">
+       <span class="insight-symbol"><i data-lucide="triangle-alert"></i></span>
+       <div>
+        <h3 id="ai-risk-title">Priority risk</h3>
+        <p id="ai-risk-desc">Low-lying habitations in Erasama, Astaranga, and Rajnagar face tidal inundation. Prioritize boat staging before landfall.</p>
+       </div>
+      </div>
+      
+      <div class="insight-block">
+       <span class="insight-symbol blue"><i data-lucide="package"></i></span>
+       <div>
+        <h3 id="ai-needs-title">Predicted needs</h3>
+        <p id="ai-needs-desc">Elevated demand for potable drinking water, dry rations (Chuda, Guda), and Anti-Venom Serum (AVS) in flood-affected coastal blocks.</p>
+       </div>
+      </div>
+      
+      <div class="insight-block">
+       <span class="insight-symbol green"><i data-lucide="list-checks"></i></span>
+       <div>
+        <h3 id="ai-action-title">Recommended next actions</h3>
+        <p id="ai-action-desc">Verify OSRM road routes to Puri Town Hall MCS, stage 4 power inflatable boats, and disconnect coastal power mains.</p>
+       </div>
+      </div>
+     </div>
+     
+     <p class="insight-disclaimer">
+      Grounded multi-hazard AI advisory based on Open-Meteo telemetry and official OSDMA Standard Operating Procedures.
+     </p>
+    </aside>
+
+   </section>
+
+   <!-- Lower Grid: Recent Alerts & Shelters Table -->
+   <div class="lower">
+    
+    <!-- Recent Alerts -->
+    <section id="alerts" class="panel" aria-labelledby="alerts-title">
+     <div class="panel-head">
+      <div>
+       <div class="panel-title" id="alerts-title">
+        <i data-lucide="bell"></i> Recent alerts &amp; hazards
+       </div>
+       <div class="panel-sub">
+        District warning timeline · Odisha EOC Feed
+       </div>
+      </div>
+      <span class="section-note">ODISHA DISASTER WATCH</span>
+     </div>
+     
+     <div class="alerts-list" id="alerts-list-container">
+      <!-- Dynamically filled by app.js -->
+      <article class="alert-item">
+       <span class="alert-line"></span>
+       <div class="alert-main">
+        <div class="alert-top">
+         <strong>Severe Cyclone Landfall Alert</strong><span class="badge critical">Red Alert</span>
+        </div>
+        <p>Gale winds (110 km/h) &amp; tidal surge expected in Jagatsinghpur (Paradip/Erasama).</p>
+        <time class="alert-time">Today · Coastal Watch</time>
+       </div>
+      </article>
+      <article class="alert-item">
+       <span class="alert-line"></span>
+       <div class="alert-main">
+        <div class="alert-top">
+         <strong>Storm Surge &amp; High Tide Warning</strong><span class="badge critical">Red Alert</span>
+        </div>
+        <p>1.5m sea breaker surge along Puri coastline. Evacuation active.</p>
+        <time class="alert-time">Today · Coastal Watch</time>
+       </div>
+      </article>
+      <article class="alert-item">
+       <span class="alert-line high"></span>
+       <div class="alert-main">
+        <div class="alert-top">
+         <strong>Riverine Delta Flood Inundation</strong><span class="badge high">Orange Alert</span>
+        </div>
+        <p>Brahmani-Baitarani river delta rising above warning mark in Kendrapara.</p>
+        <time class="alert-time">Today · Hydrologic Watch</time>
+       </div>
+      </article>
+     </div>
+    </section>
+
+    <!-- Shelters & Resources Table -->
+    <section id="resources" class="panel" aria-labelledby="resources-title">
+     <div class="panel-head">
+      <div>
+       <div class="panel-title" id="resources-title">
+        <i data-lucide="warehouse"></i> Shelters &amp; resources
+       </div>
+       <div class="panel-sub">
+        OSDMA Multipurpose Cyclone Shelters (MCS) availability
+       </div>
+      </div>
+      <span class="section-note" id="shelter-count-note">6 CENTERS REGISTERED</span>
+     </div>
+     
+     <div class="table-scroll">
+      <table>
+       <thead>
+        <tr>
+         <th scope="col">Facility / District</th>
+         <th scope="col">Type</th>
+         <th scope="col">Capacity used</th>
+         <th scope="col">Status</th>
+        </tr>
+       </thead>
+       <tbody id="shelters-tbody">
+        <!-- Dynamically filled by app.js -->
+        <tr>
+         <td>Puri Town Hall Multipurpose Shelter<small>Puri Coastal Belt</small></td>
+         <td>Cyclone Shelter</td>
+         <td>
+          <div class="capacity">
+           <span class="bar"><span style="width:41%"></span></span>332 / 800
+          </div>
+         </td>
+         <td><span class="badge open">Open (468 free)</span></td>
+        </tr>
+       </tbody>
+      </table>
+     </div>
+    </section>
+
+   </div>
+
+   <!-- Response Teams Section -->
+   <section id="reports" class="panel teams" aria-labelledby="teams-title">
+    <div class="panel-head">
+     <div>
+      <div class="panel-title" id="teams-title">
+       <i data-lucide="users-round"></i> Emergency Response Teams
+      </div>
+      <div class="panel-sub">
+       ODRAF, NDRF, and 108 Emergency Medical units deployed
+      </div>
+     </div>
+     <span class="section-note">ACTIVE DISPATCH UNITS</span>
+    </div>
+    
+    <div class="teams-grid" id="teams-grid-container">
+     <!-- Card 1: ODRAF -->
+     <article class="team">
+      <div class="team-top">
+       <span class="team-avatar"><i data-lucide="waves"></i></span>
+       <span class="badge critical">42 Units Standby</span>
+      </div>
+      <h3>ODRAF (Odisha Disaster Rapid Action Force)</h3>
+      <p>Inflatable motorized Gemini boats, deep-diving rescue kits, power tree cutters.</p>
+      <div class="team-footer">
+       <i data-lucide="map-pin"></i> Coastal Odisha &amp; River Delta Blocks
+      </div>
+      <div class="team-action-row" style="margin-top: 12px; display: flex; gap: 8px;">
+       <a href="tel:1070" class="team-btn team-btn-call" title="Call ODRAF Control: 1070">
+        <i data-lucide="phone-call"></i> Call 1070
+       </a>
+       <button type="button" class="team-btn team-btn-sos" onclick="if(window.openReportModal) { window.openReportModal('ODRAF Inflatable Boat Unit'); }">
+        <i data-lucide="alert-triangle"></i> SOS to Unit
+       </button>
+      </div>
+     </article>
+
+     <!-- Card 2: NDRF -->
+     <article class="team">
+      <div class="team-top">
+       <span class="team-avatar"><i data-lucide="truck"></i></span>
+       <span class="badge critical">18 Teams Deployed</span>
+      </div>
+      <h3>NDRF (3rd Bn Central Disaster Force)</h3>
+      <p>Hydraulic concrete cutters, deep flood zodiacs, structural collapse search squads.</p>
+      <div class="team-footer">
+       <i data-lucide="map-pin"></i> Mundali, Cuttack &amp; Low-Lying Delta
+      </div>
+      <div class="team-action-row" style="margin-top: 12px; display: flex; gap: 8px;">
+       <a href="tel:1078" class="team-btn team-btn-call" title="Call NDRF Control: 1078">
+        <i data-lucide="phone-call"></i> Call 1078
+       </a>
+       <button type="button" class="team-btn team-btn-sos" onclick="if(window.openReportModal) { window.openReportModal('NDRF 3rd Bn Search & Rescue'); }">
+        <i data-lucide="alert-triangle"></i> SOS to Unit
+       </button>
+      </div>
+     </article>
+
+     <!-- Card 3: 108 Ambulance -->
+     <article class="team">
+      <div class="team-top">
+       <span class="team-avatar"><i data-lucide="ambulance"></i></span>
+       <span class="badge high">450+ Active Fleet</span>
+      </div>
+      <h3>108 Emergency Medical &amp; Trauma Ambulance</h3>
+      <p>Advanced Life Support (ALS), Anti-Venom Serum (AVS) kits, mobile oxygen triage.</p>
+      <div class="team-footer">
+       <i data-lucide="map-pin"></i> State-wide Highway &amp; Rural Lifelines
+      </div>
+      <div class="team-action-row" style="margin-top: 12px; display: flex; gap: 8px;">
+       <a href="tel:108" class="team-btn team-btn-call" title="Call Ambulance Hotline: 108">
+        <i data-lucide="phone-call"></i> Call 108
+       </a>
+       <button type="button" class="team-btn team-btn-sos" onclick="if(window.openReportModal) { window.openReportModal('108 Emergency Medical Squad'); }">
+        <i data-lucide="alert-triangle"></i> SOS to Unit
+       </button>
+      </div>
+     </article>
+
+     <!-- Card 4: Odisha Fire & Rescue -->
+     <article class="team">
+      <div class="team-top">
+       <span class="team-avatar"><i data-lucide="flame"></i></span>
+       <span class="badge high">338 Stations Ready</span>
+      </div>
+      <h3>Odisha Fire &amp; Emergency Rescue Services</h3>
+      <p>Swift-water evacuation, dewatering pump squads, high-mast flood lighting.</p>
+      <div class="team-footer">
+       <i data-lucide="map-pin"></i> All 314 Block Fire Stations
+      </div>
+      <div class="team-action-row" style="margin-top: 12px; display: flex; gap: 8px;">
+       <a href="tel:112" class="team-btn team-btn-call" title="Call Emergency Dial: 112">
+        <i data-lucide="phone-call"></i> Call 112
+       </a>
+       <button type="button" class="team-btn team-btn-sos" onclick="if(window.openReportModal) { window.openReportModal('Odisha Fire Swift-Water Rescue'); }">
+        <i data-lucide="alert-triangle"></i> SOS to Unit
+       </button>
+      </div>
+     </article>
+
+     <!-- Card 5: Coast Guard -->
+     <article class="team">
+      <div class="team-top">
+       <span class="team-avatar"><i data-lucide="life-buoy"></i></span>
+       <span class="badge ok">Patrol Active</span>
+      </div>
+      <h3>Indian Coast Guard (District HQ 7 Paradip)</h3>
+      <p>Offshore patrol vessels, Chetak rescue helicopters, marine search-and-rescue.</p>
+      <div class="team-footer">
+       <i data-lucide="map-pin"></i> Bay of Bengal Coast &amp; Chilika Basin
+      </div>
+      <div class="team-action-row" style="margin-top: 12px; display: flex; gap: 8px;">
+       <a href="tel:1554" class="team-btn team-btn-call" title="Call Coast Guard SAR: 1554">
+        <i data-lucide="phone-call"></i> Call 1554
+       </a>
+       <button type="button" class="team-btn team-btn-sos" onclick="if(window.openReportModal) { window.openReportModal('Indian Coast Guard Maritime Unit'); }">
+        <i data-lucide="alert-triangle"></i> SOS to Unit
+       </button>
+      </div>
+     </article>
+
+     <!-- Card 6: OSDMA SEOC -->
+     <article class="team">
+      <div class="team-top">
+       <span class="team-avatar"><i data-lucide="radio"></i></span>
+       <span class="badge ok">Command Online</span>
+      </div>
+      <h3>OSDMA State Emergency Operations Centre (SEOC)</h3>
+      <p>Universal multi-hazard radar coordination, satellite comms &amp; relief logistics.</p>
+      <div class="team-footer">
+       <i data-lucide="map-pin"></i> Rajiv Bhawan, Bhubaneswar
+      </div>
+      <div class="team-action-row" style="margin-top: 12px; display: flex; gap: 8px;">
+       <a href="tel:1070" class="team-btn team-btn-call" title="Call State Control: 1070">
+        <i data-lucide="phone-call"></i> Call 1070
+       </a>
+       <button type="button" class="team-btn team-btn-sos" onclick="if(window.openReportModal) { window.openReportModal('OSDMA SEOC Command Triage'); }">
+        <i data-lucide="alert-triangle"></i> SOS to Unit
+       </button>
+      </div>
+     </article>
+    </div>
+   </section>
+
+  </main>
+
+  <!-- 3. FOOTER -->
+  <footer class="footer">
+   <span>ResQ Odisha · OSDMA Multi-Hazard Command &amp; Citizen Safety Prototype</span>
+   <span>Toll Free Emergency Control: <strong>1070</strong> · ERSS Dispatch: <strong>112</strong> · For life-threatening emergencies contact local responders.</span>
+  </footer>
+
+  <!-- 4. REPORT INCIDENT / EMERGENCY SOS MODAL -->
+  <div id="report-backdrop" class="dialog-backdrop" aria-hidden="true">
+   <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-description">
+    
+    <div class="dialog-head">
+     <div>
+      <h2 id="dialog-title">Emergency Rescue SOS Report</h2>
+      <p id="dialog-description">Submit distress coordinates directly to OSDMA Triage &amp; ODRAF Dispatch.</p>
+     </div>
+     <button id="close-report" class="close-btn" type="button" aria-label="Close report form">
+      <i data-lucide="x"></i>
+     </button>
+    </div>
+    
+    <form id="incident-form" class="form-body">
+     
+     <div class="field-grid">
+      <div class="field">
+       <label for="incident-type">Incident type</label>
+       <select id="incident-type" required>
+        <option value="">Select type</option>
+        <option value="Flood / Marooned">Flood / Marooned on Roof</option>
+        <option value="Severe Cyclone Gale">Severe Cyclone / Roof Blown</option>
+        <option value="Structural Collapse">Wall / House Collapse</option>
+        <option value="Snakebite / Medical">Snakebite / Medical Emergency</option>
+        <option value="Rations & Drinking Water">Water &amp; Food Exhausted</option>
+        <option value="Road Blockage / Tree Fall">Road Blockage / Fallen Tree</option>
+        <option value="Other">Other Distress</option>
+       </select>
+      </div>
+      
+      <div class="field">
+       <label for="incident-severity">Urgency severity</label>
+       <select id="incident-severity" required>
+        <option value="">Select urgency</option>
+        <option value="5">Critical (Immediate Danger to Life)</option>
+        <option value="4">High (Rising Flood Water / Trapped)</option>
+        <option value="3">Moderate (Supplies Exhausted)</option>
+        <option value="2">Low (Advisory / Road Check)</option>
+       </select>
+      </div>
+     </div>
+
+     <!-- Contact Number -->
+     <div class="field">
+      <label for="incident-phone">Contact Phone / Satellite Number *</label>
+      <input id="incident-phone" type="tel" placeholder="+91 94370 XXXXX" value="+91 94370 11223" required>
+     </div>
+
+     <!-- District & GPS -->
+     <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+       <label for="incident-district" style="margin-bottom:0;">District Location *</label>
+       <button id="btn-use-gps" type="button" style="background:none;border:none;color:#14b8a6;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;cursor:pointer;">
+        <i data-lucide="crosshair" style="width:13px;height:13px;"></i> Use My Live GPS
+       </button>
+      </div>
+      <select id="incident-district" required>
+       <option value="Puri" data-lat="19.8135" data-lon="85.8312">Puri District (19.8135° N, 85.8312° E)</option>
+       <option value="Jagatsinghpur" data-lat="20.2648" data-lon="86.3820">Jagatsinghpur / Paradip (20.2648° N, 86.3820° E)</option>
+       <option value="Kendrapara" data-lat="20.5010" data-lon="86.4180">Kendrapara / Rajnagar (20.5010° N, 86.4180° E)</option>
+       <option value="Cuttack" data-lat="20.4625" data-lon="85.8830">Cuttack / Mundali (20.4625° N, 85.8830° E)</option>
+       <option value="Khordha" data-lat="20.2961" data-lon="85.8245">Bhubaneswar / Khordha (20.2961° N, 85.8245° E)</option>
+       <option value="Ganjam" data-lat="19.2647" data-lon="84.9120">Ganjam / Gopalpur (19.2647° N, 84.9120° E)</option>
+      </select>
+     </div>
+
+     <input type="hidden" id="incident-lat" value="19.8135">
+     <input type="hidden" id="incident-lon" value="85.8312">
+
+     <!-- Description -->
+     <div class="field">
+      <label for="incident-description">Distress details (English or Odia) *</label>
+      <textarea id="incident-description" maxlength="1200" placeholder="State number of stranded individuals, water depth, medical conditions, landmark..." required>Water level rising fast inside ground floor, 4 family members trapped on rooftop, need rescue boat urgently!</textarea>
+     </div>
+
+     <p class="form-note">
+      Direct Emergency Sync: Submitting this form activates the FastAPI AI Triage classifier, assigns the nearest multipurpose shelter, and alerts ODRAF units.
+     </p>
+
+     <!-- Live Dispatch Feedback -->
+     <div id="dispatch-result-card" class="dispatch-result" style="display:none;"></div>
+     <p id="form-message" class="form-message" role="status" aria-live="polite" hidden></p>
+
+     <div class="form-actions">
+      <button id="cancel-report" class="secondary-btn" type="button">Cancel</button>
+      <button id="submit-report" class="submit-btn" type="submit">
+       <span>Dispatch Rescue / ଉଦ୍ଧାର ପଠାନ୍ତୁ</span>
+      </button>
+     </div>
+    </form>
+   </div>
+  </div>
+
+  <!-- =========================================================================
+       FLOATING RESQ AI ASSISTANT CHATBOT
+       ========================================================================= -->
+  <!-- Launcher Button -->
+  <button id="chatbot-launcher" class="chatbot-launcher" type="button" aria-label="Open ResQ AI Assistant" title="Open ResQ AI Assistant (OSDMA Copilot)" aria-expanded="false" aria-controls="chatbot-window">
+    <span class="launcher-pulse-ring"></span>
+    <span class="launcher-icon">
+      <i data-lucide="bot"></i>
+    </span>
+    <span class="launcher-badge">AI</span>
+  </button>
+
+  <!-- Floating Chat Window -->
+  <aside id="chatbot-window" class="chatbot-window" aria-label="ResQ AI Assistant Window" hidden>
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="chat-avatar">
+          <i data-lucide="bot"></i>
+          <span class="chat-status-dot" title="Online · OSDMA AI Copilot Connected"></span>
+        </div>
+        <div class="chat-title-group">
+          <div class="chat-title-row">
+            <h3 class="chat-title">ResQ AI Assistant</h3>
+            <span class="chat-tag">OSDMA COPILOT</span>
+          </div>
+          <p class="chat-subtitle">24/7 Multi-Hazard &amp; Citizen Safety Intelligence</p>
+        </div>
+      </div>
+      <div class="chat-header-actions">
+        <!-- Language Switcher -->
+        <div class="chat-lang-toggle" role="group" aria-label="Select Language">
+          <button type="button" id="chat-lang-en" class="lang-btn active" title="English">EN</button>
+          <button type="button" id="chat-lang-od" class="lang-btn" title="Odia (ଓଡ଼ିଆ)">ଓଡ଼ି</button>
+        </div>
+        <!-- Close Button -->
+        <button id="chatbot-close-btn" class="chat-close-btn" type="button" aria-label="Close ResQ AI Assistant">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Location Context Strip -->
+    <div class="chat-context-strip">
+      <div class="context-loc">
+        <i data-lucide="map-pin"></i>
+        <select id="chat-district-select" class="context-district-select" aria-label="Select active monitoring location">
+          <option value="Bhubaneswar" data-lat="20.2961" data-lon="85.8245">Bhubaneswar / Khordha (20.30° N, 85.82° E)</option>
+          <option value="Puri" data-lat="19.8135" data-lon="85.8312">Puri Coastal Zone (19.81° N, 85.83° E)</option>
+          <option value="Cuttack" data-lat="20.4625" data-lon="85.8830">Cuttack / Mundali (20.46° N, 85.88° E)</option>
+          <option value="Jagatsinghpur" data-lat="20.2648" data-lon="86.3820">Jagatsinghpur / Paradip (20.26° N, 86.38° E)</option>
+          <option value="Kendrapara" data-lat="20.5010" data-lon="86.4180">Kendrapara Coast (20.50° N, 86.42° E)</option>
+          <option value="Ganjam" data-lat="19.2647" data-lon="84.9120">Ganjam / Gopalpur (19.26° N, 84.91° E)</option>
+          <option value="Balasore" data-lat="21.4934" data-lon="86.9135">Balasore / Chandipur (21.49° N, 86.91° E)</option>
+        </select>
+      </div>
+      <button type="button" id="chat-use-gps-btn" class="context-gps-btn" title="Use current GPS coordinates">
+        <i data-lucide="crosshair"></i> <span>GPS</span>
+      </button>
+    </div>
+
+    <!-- Messages Container -->
+    <div id="chat-messages" class="chat-messages" role="log" aria-live="polite">
+      <!-- Welcome Message & Conversation dynamically rendered here -->
+    </div>
+
+    <!-- Quick Prompts Chips -->
+    <div class="chat-quick-chips" id="chat-quick-chips" aria-label="Suggested safety queries">
+      <button type="button" class="quick-chip" data-query="Where is the nearest shelter in Puri?">
+        <i data-lucide="home"></i> Nearest Shelter
+      </button>
+      <button type="button" class="quick-chip" data-query="What is the current cyclone alert status in Puri?">
+        <i data-lucide="cloud-lightning"></i> Cyclone Status
+      </button>
+      <button type="button" class="quick-chip" data-query="What are the essential flood safety steps when water enters house?">
+        <i data-lucide="waves"></i> Flood Safety
+      </button>
+      <button type="button" class="quick-chip" data-query="Someone got bitten by a snake in flood water, what first aid should I give?">
+        <i data-lucide="shield-alert"></i> Snakebite First Aid
+      </button>
+      <button type="button" class="quick-chip" data-query="What are the official OSDMA emergency helpline numbers?">
+        <i data-lucide="phone"></i> Emergency Helplines
+      </button>
+    </div>
+
+    <!-- Input Footer -->
+    <form id="chat-form" class="chat-input-form" autocomplete="off">
+      <!-- Voice Recognition Live Status Banner -->
+      <div id="chat-voice-status" class="chat-voice-status" style="display: none;" role="status" aria-live="polite">
+        <div class="voice-status-left">
+          <span class="voice-pulse-dot"></span>
+          <span id="chat-voice-label">Listening in English (en-IN)...</span>
+        </div>
+        <button type="button" id="chat-voice-stop-btn" class="voice-cancel-btn" title="Stop listening">Stop</button>
+      </div>
+
+      <div class="chat-input-wrapper">
+        <input 
+          id="chat-user-input" 
+          type="text" 
+          placeholder="Ask ResQ AI about shelters, cyclone wind, flood safety..." 
+          aria-label="Ask ResQ AI Assistant"
+          maxlength="500" 
+          required
+        />
+        <button id="chat-mic-btn" class="chat-mic-btn" type="button" aria-label="Voice input" title="Voice Input (English / Odia)">
+          <i data-lucide="mic" id="chat-mic-icon"></i>
+          <span class="mic-wave-ring"></span>
+        </button>
+        <button id="chat-send-btn" class="chat-send-btn" type="submit" aria-label="Send query">
+          <i data-lucide="send"></i>
+        </button>
+      </div>
+      <div class="chat-footer-note">
+        <span>Verified OSDMA &amp; IMD SOPs · For immediate life danger call <strong>112</strong> / <strong>1079</strong></span>
+      </div>
+    </form>
+  </aside>
+
+  <!-- Leaflet JS with guaranteed local fallback -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script src="/static/vendor/leaflet/leaflet.js"></script>
+  
+  <!-- Main Frontend Application Logic -->
+  <script src="/static/app.js"></script>
+
+ </body>
+</html>

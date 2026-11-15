@@ -70,16 +70,19 @@ async def lifespan(app: FastAPI):
     init_and_seed_db()
     logger.info("Database initialized & pre-seeded successfully.")
 
-    # Start automated periodic background syncer task
-    syncer_task = asyncio.create_task(periodic_weather_syncer())
+    # Start automated periodic background syncer task only in persistent server environments
+    syncer_task = None
+    if not (os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")):
+        syncer_task = asyncio.create_task(periodic_weather_syncer())
     try:
         yield
     finally:
-        syncer_task.cancel()
-        try:
-            await syncer_task
-        except asyncio.CancelledError:
-            pass
+        if syncer_task:
+            syncer_task.cancel()
+            try:
+                await syncer_task
+            except asyncio.CancelledError:
+                pass
 
 
 app = FastAPI(
@@ -87,6 +90,7 @@ app = FastAPI(
     description="Universal AI Disaster Copilot and Command System tailored for Odisha.",
     version="2.0.0",
     lifespan=lifespan,
+    redirect_slashes=False,
 )
 
 # CORS Configuration
@@ -278,7 +282,9 @@ async def update_bhashini_config(req: BhashiniConfigUpdateRequest) -> Dict[str, 
 @app.get("/", response_class=FileResponse)
 async def serve_index():
     """Serve the Command Center & Citizen Safety Hub UI."""
-    index_path = os.path.join(STATIC_DIR, "index.html")
+    root_index = os.path.join(BASE_DIR, "index.html")
+    static_index = os.path.join(STATIC_DIR, "index.html")
+    index_path = root_index if os.path.exists(root_index) else static_index
     if not os.path.exists(index_path):
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
