@@ -3,10 +3,12 @@ import os
 import sqlite3
 from typing import Any, Dict, List, Optional
 
-DB_PATH = os.environ.get(
-    "RESQ_DB_PATH",
-    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "resq_odisha.db"),
-)
+if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    DEFAULT_DB_PATH = "/tmp/resq_odisha.db"
+else:
+    DEFAULT_DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "resq_odisha.db")
+
+DB_PATH = os.environ.get("RESQ_DB_PATH", DEFAULT_DB_PATH)
 
 
 def get_db_connection() -> sqlite3.Connection:
