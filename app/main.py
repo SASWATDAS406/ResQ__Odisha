@@ -102,21 +102,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.middleware("http")
-async def vercel_routing_middleware(request: Request, call_next):
-    """Normalize Vercel rewrite paths so ASGI scope matches FastAPI registered routes."""
-    current_path = request.scope.get("path", "")
-    matched_path = request.headers.get("x-matched-path")
-
-    # If Vercel rewrote destination to /api/index.py or /api/index.py/...
-    if current_path.startswith("/api/index.py"):
-        sub = current_path[len("/api/index.py"):]
-        request.scope["path"] = sub if sub else (matched_path or "/")
-    elif matched_path and current_path in ["/api", "/api/"]:
-        request.scope["path"] = matched_path
-
-    return await call_next(request)
-
 @app.get("/api/debug-vercel")
 @app.get("/debug-vercel")
 async def debug_vercel(request: Request):
