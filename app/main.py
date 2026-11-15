@@ -10,7 +10,7 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, Query, status
+from fastapi import FastAPI, Query, status, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -102,6 +102,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def vercel_routing_middleware(request: Request, call_next):
+    """Normalize Vercel rewrite paths so ASGI scope matches FastAPI registered routes."""
+    current_path = request.scope.get("path", "")
+    matched_path = request.headers.get("x-matched-path")
+
+    # If Vercel rewrote destination to /api/index.py or /api/index.py/...
+    if current_path.startswith("/api/index.py"):
+        sub = current_path[len("/api/index.py"):]
+        request.scope["path"] = sub if sub else (matched_path or "/")
+    elif matched_path and current_path in ["/api", "/api/"]:
+        request.scope["path"] = matched_path
+
+    return await call_next(request)
+
+@app.get("/api/debug-vercel")
+@app.get("/debug-vercel")
+async def debug_vercel(request: Request):
+    return {
+        "url_path": request.url.path,
+        "scope_path": request.scope.get("path"),
+        "headers": dict(request.headers),
+    }
+
 # Mount Static Files
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -147,6 +171,7 @@ class WeatherIntelRequest(BaseModel):
 
 
 @app.post("/api/weather-intel")
+@app.post("/weather-intel")
 async def handle_weather_intel_post(req: WeatherIntelRequest) -> Dict[str, Any]:
     """
     Unified AI Weather Intelligence & Interactive Cyclone Map Endpoint:
@@ -162,6 +187,7 @@ async def handle_weather_intel_post(req: WeatherIntelRequest) -> Dict[str, Any]:
 
 
 @app.get("/api/weather-intel")
+@app.get("/weather-intel")
 async def handle_weather_intel_get(
     lat: Optional[float] = Query(None, description="GPS Latitude"),
     lon: Optional[float] = Query(None, description="GPS Longitude"),
@@ -184,6 +210,7 @@ async def update_key(req: APIKeyUpdateRequest) -> Dict[str, Any]:
 
 
 @app.post("/api/ai/asr")
+@app.post("/ai/asr")
 async def handle_voice_asr(req: VoiceASRRequest) -> Dict[str, Any]:
     """
     Automatic Speech Recognition (ASR) endpoint for Odia and English:
@@ -224,6 +251,7 @@ async def handle_voice_asr(req: VoiceASRRequest) -> Dict[str, Any]:
 
 
 @app.get("/api/ai/asr/status")
+@app.get("/ai/asr/status")
 async def get_asr_status() -> Dict[str, Any]:
     """Check configuration and availability of Bhashini Odia ASR service."""
     from app.bhashini_service import is_bhashini_configured, get_bhashini_credentials, KNOWN_ODIA_MODELS
@@ -294,6 +322,7 @@ async def serve_index():
 
 
 @app.get("/api/hazards")
+@app.get("/hazards")
 async def get_hazards() -> Dict[str, Any]:
     """Retrieve all district hazard warning zones with rainfall and wind parameters."""
     districts = get_all_district_hazards()
@@ -301,6 +330,7 @@ async def get_hazards() -> Dict[str, Any]:
 
 
 @app.get("/api/shelters")
+@app.get("/shelters")
 async def get_shelters() -> Dict[str, Any]:
     """Retrieve all multipurpose cyclone shelters with computed available capacity."""
     shelters = get_all_cyclone_shelters()
@@ -308,6 +338,7 @@ async def get_shelters() -> Dict[str, Any]:
 
 
 @app.get("/api/incidents")
+@app.get("/incidents")
 async def get_incidents() -> Dict[str, Any]:
     """Retrieve recent SOS incident reports ordered by id DESC."""
     incidents = get_recent_sos_reports(limit=50)
@@ -315,6 +346,7 @@ async def get_incidents() -> Dict[str, Any]:
 
 
 @app.get("/api/advisory")
+@app.get("/advisory")
 async def get_advisory_sop(
     threat_type: str = Query("CYCLONE", description="Threat category: CYCLONE, FLOOD, or GENERAL_STORM"),
     lang: str = Query("en", description="Language code: en or od"),
@@ -325,6 +357,7 @@ async def get_advisory_sop(
 
 
 @app.get("/api/disaster-news")
+@app.get("/disaster-news")
 async def get_disaster_news(lang: str = Query("en", description="Language code: en or od")) -> Dict[str, Any]:
     """
     Retrieve live natural disaster updates, meteorological warnings,
@@ -429,6 +462,7 @@ async def get_disaster_news(lang: str = Query("en", description="Language code: 
 
 
 @app.get("/api/stats")
+@app.get("/stats")
 async def get_kpis() -> Dict[str, Any]:
     """Provide real-time KPI metrics for dashboard badges."""
     global CURRENT_WEATHER_MODE
@@ -463,6 +497,7 @@ async def get_kpis() -> Dict[str, Any]:
 
 
 @app.get("/api/weather/point")
+@app.get("/weather/point")
 async def get_point_weather(
     lat: float = Query(..., description="GPS Latitude"),
     lon: float = Query(..., description="GPS Longitude"),
@@ -475,6 +510,7 @@ async def get_point_weather(
 
 
 @app.post("/api/weather/sync-live")
+@app.post("/weather/sync-live")
 async def sync_live_weather() -> Dict[str, Any]:
     """Fetch real-time Open-Meteo observations for all Odisha districts and persist in SQLite."""
     global CURRENT_WEATHER_MODE, LAST_WEATHER_SYNC_TIME
@@ -491,6 +527,7 @@ async def sync_live_weather() -> Dict[str, Any]:
 
 
 @app.post("/api/weather/simulate-cyclone")
+@app.post("/weather/simulate-cyclone")
 async def simulate_cyclone_weather() -> Dict[str, Any]:
     """Reset district hazards to active severe Bay of Bengal cyclone landfall scenario for testing."""
     global CURRENT_WEATHER_MODE
@@ -506,6 +543,7 @@ async def simulate_cyclone_weather() -> Dict[str, Any]:
 
 
 @app.post("/api/ai/copilot")
+@app.post("/ai/copilot")
 async def handle_copilot(req: CopilotRequest) -> Dict[str, Any]:
     """
     Omnipresent ResQ-Odisha AI Copilot:
@@ -523,6 +561,7 @@ async def handle_copilot(req: CopilotRequest) -> Dict[str, Any]:
 
 
 @app.post("/api/sos")
+@app.post("/sos")
 async def handle_sos(req: SOSCreateRequest) -> Dict[str, Any]:
     """
     Process incoming SOS distress call via unified AI Copilot logic:
